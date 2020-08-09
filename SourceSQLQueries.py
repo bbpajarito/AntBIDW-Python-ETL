@@ -319,24 +319,43 @@ Fact_WorkDays_query = '''
 '''
 
 Fact_WorkAttendance_query = '''
-	SELECT  
-		A.UserId AS CandidateId, 
-		A.Id AS AttendanceId,
-		CAST(A.TimeIn AS date) AS Date, 
-		CAST(A.TimeIn AS time) AS TimeIn,
-		CAST(A.TimeOut AS time) AS TimeOut,
-		TotalHoursWorked =
-			CASE
-				WHEN A.TimeOut IS NULL THEN ISNULL(ROUND(AP.NumberOfHourPerWeek / NULLIF(AP.NumberOfDayPerWeek, 0), 1), 0)
-				ELSE ROUND(CAST(DATEDIFF(minute, A.TimeIn, A.TimeOut) AS float) / 60.0, 1)
-			END
-	FROM [dbo].[Attendance] A
-	INNER JOIN [dbo].[User] U ON U.Id = A.UserId
-	INNER JOIN [dbo].[ProjectEnrolmentRecord] PER ON PER.UserId = U.Id
-	INNER JOIN [dbo].[AttendancePattern] AP ON AP.UserId = U.Id
-	WHERE 
-		U.IsDisabled = 0 AND U.IsDeleted = 0 AND U.FirstName IS NOT NULL AND
-		PER.IsDeleted = 0 AND
-		A.IsDeleted = 0 AND
-		AP.IsDeleted = 0
+	SELECT
+		SQ.CandidateId,
+		SQ.GroupId,
+		SQ.Date,
+		MIN(SQ.TimeIn) AS TimeIn,
+		MAX(SQ.TimeOut) AS TimeOut,
+		SUM(SQ.TotalHoursWorked) AS TotalHoursWorked
+	FROM (
+		SELECT
+			A.UserId AS CandidateId,
+			A.GroupId AS GroupId,
+			CAST(A.Date AS date) AS Date,
+			CAST(A.TimeIn AS time) AS TimeIn,
+			CAST(A.TimeOut AS time) AS TimeOut,
+			AP.NumberOfHourPerWeek,
+			AP.NumberOfDayPerWeek,
+			TotalHoursWorked =
+				CASE
+					WHEN A.TimeOut IS NULL THEN ISNULL(ROUND(AP.NumberOfHourPerWeek / NULLIF(AP.NumberOfDayPerWeek, 0), 1), 0)
+					ELSE ROUND(CAST(DATEDIFF(minute, A.TimeIn, A.TimeOut) AS float) / 60.0, 1)
+				END
+		FROM [dbo].[Attendance] A
+		INNER JOIN [dbo].[AttendancePattern] AP ON  AP.UserId = A.UserId AND AP.GroupId = A.GroupId
+		WHERE 
+			AP.IsDeleted = 0 AND
+			A.IsDeleted = 0
+		) AS SQ
+	INNER JOIN [dbo].[User] U ON U.Id = SQ.CandidateId
+	INNER JOIN [dbo].[Group] G ON G.Id = SQ.GroupId
+	INNER JOIN [dbo].[ProjectEnrolmentRecord] PER ON PER.UserId = SQ.CandidateId AND PER.GroupId = SQ.GroupId
+	WHERE
+		U.IsDeleted = 0 AND U.IsDisabled = 0 AND U.FirstName IS NOT NULL AND
+		G.IsDeleted = 0 AND
+		PER.IsDeleted = 0 
+	GROUP BY 
+		SQ.CandidateId,
+		SQ.GroupId,
+		SQ.Date
+	ORDER BY CandidateId ASC
 '''
