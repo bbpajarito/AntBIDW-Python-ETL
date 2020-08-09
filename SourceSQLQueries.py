@@ -360,7 +360,7 @@ Fact_WorkAttendance_query = '''
 	ORDER BY CandidateId ASC
 '''
 
-Fact_CandidateConversation = '''
+Fact_CandidateConversation_query = '''
 	SELECT
 		M.StarterId AS CandidateId,
 		CAST(M.CreatedOn AS date) AS ConversationDate,

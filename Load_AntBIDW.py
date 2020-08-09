@@ -38,6 +38,7 @@ Fact_CandidateWorkCommittedPattern_source = SQLSource(connection=AntBilReplicati
 Fact_MeetingAttendanceCommittedPattern_source = SQLSource(connection=AntBilReplication_conn, query=SSQ.Fact_MeetingAttendanceCommittedPattern_query)
 Fact_WorkDays_source = SQLSource(connection=AntBilReplication_conn, query=SSQ.Fact_WorkDays_query)
 Fact_WorkAttendance_source = SQLSource(connection=AntBilReplication_conn, query=SSQ.Fact_WorkAttendance_query)
+Fact_CandidateConversation_source = SQLSource(connection=AntBilReplication_conn, query=SSQ.Fact_CandidateConversation_query)
 
 # Methods
 def convert_FullDate(row):
@@ -170,9 +171,16 @@ Fact_WorkDays = AccumulatingSnapshotFactTable(
 
 Fact_WorkAttendance = AccumulatingSnapshotFactTable(
     name='Fact_WorkAttendance',
-    keyrefs=['CandidateKey', 'DateKey', 'AttendanceId'],
+    keyrefs=['CandidateKey', 'GroupKey', 'DateKey'],
     otherrefs=['Version', 'TimeIn', 'TimeOut'],
     measures=['TotalHoursWorked']
+)
+
+Fact_CandidateConversation = AccumulatingSnapshotFactTable(
+    name='Fact_CandidateConversation',
+    keyrefs=['CandidateKey', 'ConversationDateKey'],
+    otherrefs=['ConversationRole', 'Version'],
+    measures=['Rating']
 )
 
 # Load the dimension tables
@@ -266,9 +274,16 @@ for row in Fact_WorkDays_source:
 
 for row in Fact_WorkAttendance_source:
     row['CandidateKey'] = DimCandidate.lookup(row)
+    row['GroupKey'] = DimGroup.lookup(row)
     row['DateKey'] = DimDate.lookup(row, namemapping={'FullDate' : 'Date'})
     row['Version'] = CS.VersionNumber
     Fact_WorkAttendance.ensure(row)
+
+for row in Fact_CandidateConversation_source:
+    row['CandidateKey'] = DimCandidate.lookup(row)
+    row['ConversationDateKey'] = DimDate.lookup(row, namemapping={'FullDate' : 'ConversationDate'})
+    row['Version'] = CS.VersionNumber
+    Fact_CandidateConversation.ensure(row)
 
     # if not row['CandidateKey']:
     #     print(row)
