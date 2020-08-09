@@ -359,3 +359,31 @@ Fact_WorkAttendance_query = '''
 		SQ.Date
 	ORDER BY CandidateId ASC
 '''
+
+Fact_CandidateConversation = '''
+	SELECT
+		M.StarterId AS CandidateId,
+		CAST(M.CreatedOn AS date) AS ConversationDate,
+		ConversationRole = 'Starter',
+		M.Rating
+	FROM [dbo].[User] U
+	LEFT JOIN [dbo].[ProjectEnrolmentRecord] PER ON PER.UserId = U.Id
+	LEFT JOIN [dbo].[MatchingUserOptIn] M ON M.StarterId = U.Id
+	WHERE 
+		U.IsDeleted = 0 AND U.IsDisabled = 0 AND U.FirstName IS NOT NULL AND
+		PER.IsDeleted = 0 AND
+		M.IsCompleted = 1 AND M.IsDeleted = 0 AND M.StarterId IS NOT NULL
+	UNION 
+	SELECT
+		M.PartnerId AS CandidateId,
+		CAST(M.CreatedOn AS date) AS ConversationDate,
+		ConversationRole = 'Partner',
+		M.Rating
+	FROM [dbo].[User] U
+	LEFT JOIN [dbo].[ProjectEnrolmentRecord] PER ON PER.UserId = U.Id
+	LEFT JOIN [dbo].[MatchingUserOptIn] M ON M.PartnerId = U.Id
+	WHERE 
+		U.IsDeleted = 0 AND U.IsDisabled = 0 AND U.FirstName IS NOT NULL AND
+		PER.IsDeleted = 0 AND
+		M.IsCompleted = 1 AND M.IsDeleted = 0 AND M.PartnerId IS NOT NULL
+'''
