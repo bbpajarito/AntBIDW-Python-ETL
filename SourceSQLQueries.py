@@ -363,6 +363,7 @@ Fact_WorkAttendance_query = '''
 Fact_CandidateConversation_query = '''
 	SELECT
 		M.StarterId AS CandidateId,
+		M.Id AS ConversationId,
 		CAST(M.CreatedOn AS date) AS ConversationDate,
 		ConversationRole = 'Starter',
 		M.Rating
@@ -376,6 +377,7 @@ Fact_CandidateConversation_query = '''
 	UNION 
 	SELECT
 		M.PartnerId AS CandidateId,
+		M.Id AS ConversationId,
 		CAST(M.CreatedOn AS date) AS ConversationDate,
 		ConversationRole = 'Partner',
 		M.Rating

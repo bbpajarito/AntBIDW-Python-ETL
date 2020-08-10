@@ -178,8 +178,8 @@ Fact_WorkAttendance = AccumulatingSnapshotFactTable(
 
 Fact_CandidateConversation = AccumulatingSnapshotFactTable(
     name='Fact_CandidateConversation',
-    keyrefs=['CandidateKey', 'ConversationDateKey', 'ConversationRole'],
-    otherrefs=['Version'],
+    keyrefs=['CandidateKey', 'ConversationDateKey', 'ConversationId'],
+    otherrefs=['Version', 'ConversationRole'],
     measures=['Rating']
 )
 
